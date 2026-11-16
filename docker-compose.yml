@@ -1,0 +1,57 @@
+name: api-autenticacao
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: api-autenticacao-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: coti
+      MYSQL_DATABASE: bd-autenticacao
+      MYSQL_USER: coti
+      MYSQL_PASSWORD: coti
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - api-autenticacao-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: api-autenticacao-phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: coti
+      PMA_PASSWORD: coti
+    ports:
+      - "5053:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - api-autenticacao-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  mysql_data:
+    name: api-autenticacao-mysql-data
+
+networks:
+  api-autenticacao-network:
+    name: api-autenticacao-network
+    driver: bridge
